@@ -1,0 +1,7 @@
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { defaults, events, interpretRequest, makePlan, answerMatches } from '../src/planner.ts';
+test('request changes mode, duration, destination and disables clues', () => { const p = interpretRequest('A 20 minute run for art without clues', defaults); assert.equal(p.mode, 'run'); assert.equal(p.minutes, 20); assert.equal(p.interest, 'art'); assert.equal(p.hunt, false); const plan = makePlan(p, events); assert.equal(plan.event.id, 'art'); assert.equal(plan.stops.length, 0); });
+test('duration is bounded and running covers more distance', () => { assert.equal(interpretRequest('200 minutes', defaults).minutes, 60); assert.equal(interpretRequest('1 hour', defaults).minutes, 60); assert.ok(makePlan({...defaults, mode:'run'}, events).distance > makePlan(defaults, events).distance); });
+test('short route uses fewer stops and quiet route fewer crossings', () => { assert.equal(makePlan({...defaults, minutes:20}, events).stops.length, 1); assert.ok(makePlan(defaults,events).crossings < makePlan({...defaults, quiet:false},events).crossings); });
+test('hosted event becomes a destination and answers normalize', () => { const custom = {...events[0], id:'custom', title:'My concert'}; assert.equal(makePlan(defaults,[custom,...events]).event.title,'My concert'); assert.equal(answerMatches(' Bird! ', 'bird'), true); assert.equal(answerMatches('coffee','bird'),false); });
